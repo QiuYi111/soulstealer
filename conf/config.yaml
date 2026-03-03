@@ -1,0 +1,15 @@
+# Default Hydra Configuration for Soulstealer MVP
+app:
+  name: "Soulstealer MVP - 乾隆模拟器"
+  version: "1.0.0"
+  debug: false
+
+llm:
+  provider: "openrouter"
+  model: "deepseek/deepseek-chat"
+  base_url: "https://openrouter.ai/api/v1"
+  temperature: 0.7
+
+tui:
+  theme: "dark"
+  language: "zh"
