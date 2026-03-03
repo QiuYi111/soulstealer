@@ -1,56 +1,76 @@
-from typing import List, Dict, Any
-from internal.domain.court import SuspectState
+import os
+import json
+from typing import List, Dict, Any, Optional
 
-class SuspectAgent:
-    """Agent representing the suspect, whose behavior is influenced by physiological state."""
+class Agent:
+    """Unified Agent class implementing the Three-Level Cache structure."""
     
-    def __init__(self, name: str, soul: str):
-        self.name = name
-        self.soul = soul
-
-    def _generate_system_prompt(self, state: SuspectState) -> str:
-        """Converts physiological state into natural language descriptions for the LLM."""
-        pain_desc = ""
-        if state.pain <= 30:
-            pain_desc = "隐隐作痛"
-        elif state.pain <= 70:
-            pain_desc = "钻心剜骨"
-        else:
-            pain_desc = "意识模糊，剧痛让你随时想自杀"
-
-        health_desc = ""
-        if state.health >= 80:
-            health_desc = "尚能支撑"
-        elif state.health >= 30:
-            health_desc = "气息奄奄，伤口开始发炎脓肿"
-        else:
-            health_desc = "命悬一线，随时可能断气"
-
-        thirst_desc = ""
-        if state.thirst > 80:
-            thirst_desc = "喉咙如火烧，嘴唇干裂出血，你为了喝一口水愿意做任何事"
-
-        physiological_state = (
-            f"你当前的状态：\n"
-            f"- 疼痛：{pain_desc}\n"
-            f"- 健康：{health_desc}\n"
-        )
-        if thirst_desc:
-            physiological_state += f"- 饥渴：{thirst_desc}\n"
-
-        full_prompt = (
-            f"【角色设定】\n{self.soul}\n\n"
-            f"【生理状态注入】\n{physiological_state}\n\n"
-            "请根据你的设定和当前的生理状态，自主决定如何回应审问。你可以选择死扛，也可以选择攀咬他人来减轻痛苦。"
-        )
-        return full_prompt
-
-    def get_response(self, state: SuspectState, history: List[Dict[str, str]], llm_client: Any) -> str:
-        """Gets the suspect's reaction from the LLM."""
-        system_prompt = self._generate_system_prompt(state)
+    def __init__(self, agent_dir: str):
+        self.agent_dir = agent_dir
+        self.name = ""
         
-        # We assume history contains the recent dialogue
-        # The first user prompt in history is the interrogator's question
-        user_prompt = history[-1]["content"] if history else "..."
+        # L1: Soul (Permanent) - Loaded from Soul.md
+        self.soul_content = ""
         
-        return llm_client.generate_response(system_prompt, user_prompt)
+        # L2: Memory (Short-term/Intermediate) - Loaded from memory.json
+        self.memory = []
+        
+        # L3: Relationships/External Context - Loaded from relationships.json
+        self.relationships = {}
+        
+        self._load_data()
+
+    def _load_data(self):
+        """Loads L1, L2, and L3 data from the agent directory."""
+        # L1: Soul
+        soul_path = os.path.join(self.agent_dir, "Soul.md")
+        if os.path.exists(soul_path):
+            with open(soul_path, "r", encoding="utf-8") as f:
+                self.soul_content = f.read()
+            # Extract name from first line if it's a markdown header
+            first_line = self.soul_content.split('\n')[0]
+            if first_line.startswith("# "):
+                self.name = first_line.replace("# ", "").split('：')[-1].split(' (')[0].strip()
+        
+        # L2: Memory
+        memory_path = os.path.join(self.agent_dir, "memory.json")
+        if os.path.exists(memory_path):
+            with open(memory_path, "r", encoding="utf-8") as f:
+                self.memory = json.load(f)
+                
+        # L3: Relationships
+        rel_path = os.path.join(self.agent_dir, "relationships.json")
+        if os.path.exists(rel_path):
+            with open(rel_path, "r", encoding="utf-8") as f:
+                self.relationships = json.load(f)
+
+    def generate_prompt(self, current_task: str, context: Optional[str] = None, available_tools: Optional[List[str]] = None) -> str:
+        """
+        Synthesizes a system prompt that encourages selective resource retrieval.
+        """
+        tools_str = ""
+        if available_tools:
+            tools_str = "\n".join([f"- {tool}" for tool in available_tools])
+        else:
+            tools_str = "无可用指令。"
+
+        prompt = (
+            f"【角色灵魂 (L1 常驻)】\n{self.soul_content}\n\n"
+            "【可用资源库】\n"
+            "- L2: 个人记忆 (memory.json)\n"
+            "- L3: 社会关系 (relationships.json)\n\n"
+            "【系统 API 指令】\n"
+            "如果你需要获取更多信息或执行操作，请在回复的最开始直接输入指令（如：/read_memory）。\n"
+            f"{tools_str}\n\n"
+            "【当前情境与任务】\n"
+            f"{current_task}\n"
+        )
+        if context:
+            prompt += f"\n【实时信息】\n{context}\n"
+            
+        prompt += "\n如果你已有足够信息，请直接以角色身份做出回应。如果你调用了指令，请等待系统返回结果。"
+        return prompt
+
+    def get_response(self, llm_client: Any, system_prompt: str, user_prompt: str, model: str = None) -> str:
+        """Call LLM with the synthesized prompts."""
+        return llm_client.generate_response(system_prompt, user_prompt, model=model)

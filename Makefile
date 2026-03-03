@@ -18,7 +18,7 @@ init: ## Initialize development environment
 
 run: ## Start TUI Application
 	@echo "🚀 Starting Soulstealer..."
-	@uv run python app/main.py
+	@PYTHONPATH=. uv run python app/main.py
 
 lint: ## Run Code Linters
 	@echo "🔍 Running Linters..."

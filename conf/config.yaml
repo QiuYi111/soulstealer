@@ -5,10 +5,11 @@ app:
   debug: false
 
 llm:
-  provider: "openrouter"
-  model: "deepseek/deepseek-chat"
-  base_url: "https://openrouter.ai/api/v1"
+  provider: "thu"
+  model: "Qwen3-Next-80B-A3B-Instruct"
+  base_url: "https://llmapi.paratera.com"
   temperature: 0.7
+  api_key: "sk-bd_lN9fD1kE81-_jBOrKTA"
 
 tui:
   theme: "dark"

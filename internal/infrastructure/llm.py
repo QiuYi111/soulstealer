@@ -9,8 +9,8 @@ class LLMClient:
         self.base_url = base_url
         self._client = httpx.Client(timeout=30.0)
 
-    def generate_response(self, system_prompt: str, user_prompt: str, history: Optional[List[Dict[str, str]]] = None, model: str = "deepseek/deepseek-chat") -> str:
-        """Call LLM API and return standard text output."""
+    def generate_response(self, system_prompt: str, user_prompt: str, history: Optional[List[Dict[str, str]]] = None, model: str = "qwen/qwen-2.5-72b-instruct") -> str:
+        """Call LLM API and return standard text output. Default model is a fallback."""
         if not self.api_key:
             return "Error: API Key not set."
 
