@@ -1,6 +1,6 @@
 import os
 import json
-from internal.domain.letters import LettersSystem, Report
+from internal.domain.letters import LettersSystem
 
 def test_letters_save_and_load(tmp_path):
     file_path = tmp_path / "test_reports.json"

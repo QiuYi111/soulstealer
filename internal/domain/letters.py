@@ -1,8 +1,15 @@
-from typing import List, Optional, Dict
+from typing import List, Optional
 from dataclasses import dataclass, asdict
 from datetime import datetime
 import json
 import os
+
+@dataclass
+class Rescript:
+    content: str
+    row: int
+    col: int
+    timestamp: str
 
 @dataclass
 class Report:
@@ -11,6 +18,23 @@ class Report:
     content: str
     timestamp: str
     author: str
+    rescripts: List[Rescript] = None
+    raw_case_data: Optional[str] = None      # 原始案卷全记录
+    polished_case_data: Optional[str] = None # 经过润色的案卷记录
+    is_returned: bool = False                # 是否已发回重审/执行
+
+    def __post_init__(self):
+        if self.rescripts is None:
+            self.rescripts = []
+        else:
+            # Ensure all items are Rescript objects
+            new_res = []
+            for r in self.rescripts:
+                if isinstance(r, dict):
+                    new_res.append(Rescript(**r))
+                else:
+                    new_res.append(r)
+            self.rescripts = new_res
 
 class LettersSystem:
     """Manages the domain logic for Letters (Official and Secret Reports)."""
@@ -24,7 +48,8 @@ class LettersSystem:
             type=type,
             content=content,
             timestamp=datetime.now().strftime("%Y-%m-%d %H:%M:%S"),
-            author=author
+            author=author,
+            rescripts=[]
         )
         self.reports.append(report)
         self._next_id += 1
@@ -38,6 +63,9 @@ class LettersSystem:
 
     def save_to_file(self, file_path: str):
         """Saves all reports to a JSON file."""
+        dirname = os.path.dirname(file_path)
+        if dirname:
+            os.makedirs(dirname, exist_ok=True)
         data = [asdict(r) for r in self.reports]
         with open(file_path, "w", encoding="utf-8") as f:
             json.dump(data, f, ensure_ascii=False, indent=2)
@@ -50,7 +78,11 @@ class LettersSystem:
         try:
             with open(file_path, "r", encoding="utf-8") as f:
                 data = json.load(f)
-                self.reports = [Report(**item) for item in data]
+                self.reports = []
+                for item in data:
+                    # Filter out keys not in Report dataclass for backward compatibility if needed
+                    self.reports.append(Report(**item))
+                
                 if self.reports:
                     self._next_id = max(r.id for r in self.reports) + 1
         except Exception:

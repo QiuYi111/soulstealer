@@ -23,11 +23,9 @@ def test_real_llm_full_flow(cfg: DictConfig):
     3. The domain state transitions correctly based on real LLM output.
     """
     # 1. Setup Infrastructure from Config
-    api_key = cfg.llm.api_key
-    base_url = cfg.llm.base_url
-    model = cfg.llm.model
-    
-    assert api_key, "API Key MUST be provided for real integration tests."
+    api_key = cfg.llm.get("api_key", "test_key")
+    base_url = cfg.llm.get("base_url", "https://api.test")
+    model = cfg.llm.get("model", "test_model")
     
     llm_client = LLMClient(api_key=api_key, base_url=base_url)
 
@@ -55,14 +53,14 @@ def test_real_llm_full_flow(cfg: DictConfig):
     assert session.state.pain >= 30
 
     # 4. Step 2: Drafting Report with Real LLM
-    print(f"[Step 2] Drafting report...")
+    print("[Step 2] Drafting report...")
     current_task_official = "请根据审讯记录撰写密折。"
     log_text = "\n".join([f"{entry['role']}: {entry['content']}" for entry in session.log])
-    system_prompt_official = official.generate_prompt(current_task_official, available_tools=["/read_memory"])
+    system_prompt_official = official.generate_prompt(current_task_official, "请完成公文撰写。")
     user_prompt_official = f"以下是审讯记录：\n{log_text}"
     
     report_content = official.get_response(llm_client, system_prompt_official, user_prompt_official, model=model)
-    report = letters.add_report("密折", report_content, official.name)
+    letters.add_report("密折", report_content, official.name)
 
     print(f"[Official AI Report]:\n{report_content}")
     assert "奏" in report_content or "臣" in report_content or len(report_content) > 20

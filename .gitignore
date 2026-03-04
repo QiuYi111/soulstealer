@@ -10,3 +10,7 @@ wheels/
 .venv
 .env
 .DS_Store
+outputs/*
+saves/
+data/
+*.db

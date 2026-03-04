@@ -15,7 +15,7 @@ def test_agent_draft_report_logic():
     log_text = "\n".join([f"{entry['role']}: {entry['content']}" for entry in session_log])
     
     current_task = "请根据审讯记录撰写明发奏折。"
-    system_prompt = agent.generate_prompt(current_task)
+    system_prompt = agent.generate_prompt(current_task, "请撰写奏折。")
     user_prompt = f"以下是审讯记录：\n{log_text}"
     
     # Test report generation
@@ -25,5 +25,5 @@ def test_agent_draft_report_logic():
     
     # Verify contents
     assert "德清县令" in agent.soul_content
-    assert "L1" in system_prompt
+    assert "Identity" in system_prompt
     assert "张三" in user_prompt

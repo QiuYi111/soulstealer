@@ -42,6 +42,23 @@
 - **从 User Story 出发**：理解“官员出于政治压力粉饰太平”的行为设计。
 - **集成测试先行 (Integration First)**：确保能通过模拟函数直接验证状态流转。
 
+## 🧠 Agent Memory Architecture (L2)
+
+Memory (`memory.json`) is the agent's **autonomous semantic record**, not a system activity log.
+
+- **Purpose**: To store key insights, suspect contradictions, or significant observations that influence future behavior.
+- **Autonomous Update**: Agents should use the `/update_memory [内容]` command to record information they deem important.
+- **Strictly No Logs**: System actions (e.g., "Read memory", "Applied torture") should NOT be written to memory. Only the *content* and *results* of those actions (if significant) should be recorded by the agent.
+- **Format**: Each memory entry must be a meaningful observation (e.g., `{"content": "嫌犯在提到籍贯时眼神闪躲，可能在撒谎。", "timestamp": "..."}`).
+
+## 🎭 Agent Interaction Principles
+
+Agents must strictly adhere to the **Action/Dialogue Only** principle to prevent "Roleplay Collapse" and context pollution.
+
+- **No Literary Descriptions**: Do not describe inner thoughts, facial expressions, or third-person actions (e.g., `*sighs*`, `He felt anxious`).
+- **Direct Communication**: Only output what the character *says* or the *API commands* they execute.
+- **Brevity**: Avoid preamble or meta-commentary about the roleplay.
+
 ## 🛡️ Quality & Git Review Pipeline
 
 ### 1. Verification Before Committing
