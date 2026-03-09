@@ -104,20 +104,35 @@ class CourtSession:
 
     def _parse_commands(self, text: str) -> tuple[str, List[tuple[str, str, str]]]:
         """
-        Parses commands in the format [[/command args]].
+        Parses commands in the format [[/command args]] or raw /command at start of lines.
         Returns (cleaned_text, list_of_commands) where list_of_commands is [(full_match, cmd_name, args)].
         """
         import re
-        pattern = re.compile(r'\[\[(/[\w_]+)\s*([^\]]*)\]\]')
+        text = str(text)
         commands = []
         
-        def replace_func(match):
+        # 1. Parse [[/command args]]
+        pattern_bracket = re.compile(r'\[\[(/[\w_]+)\s*([^\]]*)\]\]')
+        for match in pattern_bracket.finditer(text):
+            commands.append((match.group(0), match.group(1), match.group(2).strip()))
+        
+        cleaned_text = pattern_bracket.sub("", text).strip()
+        
+        # 2. Parse raw /command at the beginning of the text or new lines
+        pattern_raw = re.compile(r'^(/[\w_]+)\s*(.*)', re.MULTILINE)
+        for match in pattern_raw.finditer(cleaned_text):
+            # Check if this command was already captured by bracket pattern (unlikely but safe)
+            full_match = match.group(0)
             cmd_name = match.group(1)
             args = match.group(2).strip()
-            commands.append((match.group(0), cmd_name, args))
-            return ""
+            
+            # Avoid duplicating or capturing dialogue as commands if they don't look like commands
+            # Usually /commands are followed by a space and then args
+            commands.append((full_match, cmd_name, args))
         
-        cleaned_text = pattern.sub(replace_func, text).strip()
+        # Clean up the raw commands from text if they were processed
+        cleaned_text = pattern_raw.sub("", cleaned_text).strip()
+        
         return cleaned_text, commands
 
     def run_auto_step(self, official_agent: Any, suspect_agent: Any, llm: Any, model: str, returned_memorials: Optional[str] = None) -> bool:

@@ -1,4 +1,3 @@
-import json
 from unittest.mock import MagicMock
 from internal.domain.court import CourtSession
 from internal.domain.agent import Agent

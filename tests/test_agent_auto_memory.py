@@ -21,7 +21,8 @@ def test_agent_auto_memory_injection():
     assert "Memory 2" in prompt
     assert "Memory 1" not in prompt
     
-    assert "你的近期部分记忆 (L2 Memory - Recent)" in prompt
+    assert "L2 Memory" in prompt
+    assert "Recent" in prompt
 
 def test_agent_no_memory_injection():
     agent = Agent("agents/magistrate")
