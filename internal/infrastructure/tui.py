@@ -315,17 +315,24 @@ class SetupScreen(Screen):
         try:
             # Wait for shared resources if they are still loading
             if self.app.retriever is None or self.app.llm is None:
-                status.update("⏳ 档案库正在初始化，请稍候...")
-                for _ in range(30): # Wait up to 30 seconds
+                for i in range(180): # Wait up to 180 seconds for heavy model loading
+                    if i % 5 == 0:
+                        status.update(f"⏳ 档案库正在初始化 (已耗时 {i}s)...")
+                    
                     if self.app.retriever is not None and self.app.llm is not None:
                         break
+                    if hasattr(self.app, "init_error") and self.app.init_error:
+                        status.update(f"❌ 初始化失败: {self.app.init_error}")
+                        progress.styles.display = "none"
+                        return
                     await asyncio.sleep(1)
                 
             if self.app.retriever is None or self.app.llm is None:
-                status.update("❌ 档案库初始化超时或失败")
+                status.update("❌ 档案库初始化超时，请检查网络或配置")
                 progress.styles.display = "none"
                 return
 
+            status.update("⏳ 正在调取大清档案 (RAG 检索中)...")
             # Use shared resources from App
             builder = AgentBuilder(self.app.retriever, self.app.llm, model=model)
             
@@ -733,6 +740,7 @@ class SoulstealerTUI(App):
         self.persistence = PersistenceManager()
         self.retriever = None
         self.llm = None
+        self.init_error = None
 
     def on_mount(self) -> None:
         self.title = "乾隆模拟器 - 《叫魂》MVP"
@@ -742,21 +750,27 @@ class SoulstealerTUI(App):
     @work(exclusive=True, thread=True)
     async def _init_resources(self):
         """异步初始化重型资源（如 RAG 检索器）"""
+        import sys
         cfg = self.cfg
         if not cfg:
             return
             
-        api_key = os.getenv("LLM_API_KEY") or cfg.llm.get("api_key", "")
-        base_url = cfg.llm.get("base_url", "https://openrouter.ai/api/v1")
-        self.llm = LLMClient(api_key=api_key, base_url=base_url)
-        
-        # Initialize RAG retriever (heavy operation)
         try:
+            api_key = os.getenv("LLM_API_KEY") or cfg.llm.get("api_key", "")
+            base_url = cfg.llm.get("base_url", "https://openrouter.ai/api/v1")
+            self.llm = LLMClient(api_key=api_key, base_url=base_url)
+            
+            # Initialize RAG retriever (heavy operation)
+            # This might take some time on the first run as it loads models
+            print("DEBUG: Initializing SoulstealerRetriever...", file=sys.stderr)
             self.retriever = SoulstealerRetriever(vector_store_dir="data/vectordb")
-        except Exception:
-            # We can log this to dev monitor later if it's visible, 
-            # for now just ensure it doesn't crash the app start
-            pass
+            print("DEBUG: SoulstealerRetriever initialized successfully.", file=sys.stderr)
+            
+        except Exception as e:
+            self.init_error = str(e)
+            print(f"DEBUG ERROR during initialization: {e}", file=sys.stderr)
+            import traceback
+            traceback.print_exc()
 
 def run_tui(cfg: DictConfig = None):
     app = SoulstealerTUI(cfg)
