@@ -5,10 +5,6 @@
   <meta name="viewport" content="width=device-width, initial-scale=1.0">
   <title>叫魂 Soulstealer — 乾隆模拟器</title>
   <meta name="description" content="基于1768年叫魂妖术恐慌的硬核历史社会学模拟游戏。扮演乾隆帝，在政治高压与信息扭曲中揭开真相。">
-  <meta property="og:title" content="叫魂 Soulstealer — 乾隆模拟器">
-  <meta property="og:description" content="AI驱动的清代历史社会学模拟游戏。在权力、谎言与生存之间，体验信息扭曲如何制造一场全国性恐慌。">
-  <meta property="og:type" content="website">
-  <meta property="og:url" content="https://qiuyi111.github.io/soulstealer/">
   <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📜</text></svg>">
   <link rel="stylesheet" href="style.css">
 </head>
@@ -16,17 +12,17 @@
   <canvas id="ink-bg"></canvas>
 
   <nav id="navbar">
-    <a href="#hero" class="nav-logo">叫魂</a>
+    <a href="index.html" class="nav-logo">叫魂</a>
+    <button class="nav-toggle" aria-label="菜单">☰</button>
     <div class="nav-links">
-      <a href="#about">背景</a>
-      <a href="#features">玩法</a>
-      <a href="#architecture">架构</a>
-      <a href="#roadmap">路线</a>
+      <a href="about.html">背景</a>
+      <a href="gameplay.html">玩法</a>
+      <a href="architecture.html">架构</a>
+      <a href="roadmap.html">路线</a>
       <a href="https://github.com/QiuYi111/soulstealer" target="_blank" rel="noopener">GitHub</a>
     </div>
   </nav>
 
-  <!-- Hero -->
   <section id="hero">
     <div class="hero-inner">
       <div class="seal">叫魂</div>
@@ -35,156 +31,59 @@
       <p class="tagline">在权力、谎言与生存之间<br>体验信息扭曲如何制造一场全国性恐慌</p>
       <div class="hero-actions">
         <a href="https://github.com/QiuYi111/soulstealer" target="_blank" rel="noopener" class="btn btn-primary">查看源码</a>
-        <a href="#about" class="btn btn-outline">了解更多</a>
+        <a href="about.html" class="btn btn-outline">了解更多</a>
       </div>
     </div>
   </section>
 
-  <!-- About -->
-  <section id="about">
+  <!-- Teaser Cards -->
+  <section id="teaser">
     <div class="container">
-      <h2 class="section-title">一七六八年</h2>
-      <p class="section-lead">
-        大清帝国被一场关于"叫魂"妖术的恐慌所席卷。从江南到华北，无数无辜者被捕、受刑、处死。
-      </p>
-      <div class="about-grid">
-        <div class="about-card">
-          <div class="about-icon">朕</div>
-          <h3>乾隆帝</h3>
-          <p>玩家居于深宫，通过批阅奏折与密折治理天下。你所看到的，是官员想让你看到的。</p>
-        </div>
-        <div class="about-card">
-          <div class="about-icon">令</div>
-          <h3>基层官员</h3>
-          <p>在政治高压下必须交出"罪犯"以保乌纱帽。不关心真相，只关心结案。</p>
-        </div>
-        <div class="about-card">
-          <div class="about-icon">囚</div>
-          <h3>底层嫌犯</h3>
-          <p>在严刑拷打下为活命编造符合官员预期的"剧本"——谎言就此自我增殖。</p>
-        </div>
+      <h2 class="section-title">走进一七六八年</h2>
+      <p class="section-lead">一场由上至下的政治恐慌，如何演变为全社会的癫狂？</p>
+      <div class="teaser-grid">
+        <a href="about.html" class="teaser-card reveal">
+          <div class="teaser-icon">史</div>
+          <h3>历史背景</h3>
+          <p>1768年的叫魂恐慌——从江南到直隶，从乞丐到皇帝，一条权力食物链如何运转。</p>
+          <span class="teaser-link">深入了解 →</span>
+        </a>
+        <a href="gameplay.html" class="teaser-card reveal">
+          <div class="teaser-icon">局</div>
+          <h3>核心机制</h3>
+          <p>信息过滤、朱批施压、AI涌现行为、双轨奏折、生理系统、终端沉浸——六大系统解读。</p>
+          <span class="teaser-link">查看玩法 →</span>
+        </a>
+        <a href="architecture.html" class="teaser-card reveal">
+          <div class="teaser-icon">构</div>
+          <h3>技术架构</h3>
+          <p>Python TUI + LLM Agent + DDD 分层架构——如何用代码复现信息扭曲的动力学。</p>
+          <span class="teaser-link">探索架构 →</span>
+        </a>
+        <a href="roadmap.html" class="teaser-card reveal">
+          <div class="teaser-icon">程</div>
+          <h3>开发路线</h3>
+          <p>从单点审讯到多Agent互联——四个阶段的演进路径与当前进展。</p>
+          <span class="teaser-link">查看路线 →</span>
+        </a>
       </div>
     </div>
   </section>
 
-  <!-- Features -->
-  <section id="features">
+  <!-- Quote -->
+  <section id="quote">
     <div class="container">
-      <h2 class="section-title">核心机制</h2>
-      <div class="features-grid">
-        <div class="feature-card">
-          <h3>信息过滤</h3>
-          <p>奏折经过官员粉饰与推诿，案卷保留受刑者的真实惨状。在字里行间寻找逻辑破绽。</p>
-        </div>
-        <div class="feature-card">
-          <h3>朱批施压</h3>
-          <p>通过批示下达指示、斥责或革职警告。政治压力沿官僚链条向下传导，改变所有人的行为。</p>
-        </div>
-        <div class="feature-card">
-          <h3>AI涌现行为</h3>
-          <p>大语言模型驱动的 Agent 在生理痛苦压力下，自主涌现出"屈打成招"或"攀咬无辜"的人性行为。</p>
-        </div>
-        <div class="feature-card">
-          <h3>双轨奏折</h3>
-          <p>明发奏折全国可见，密折暗中传递。官员在两种文件中扮演截然不同的角色。</p>
-        </div>
-        <div class="feature-card">
-          <h3>生理系统</h3>
-          <p>嫌犯拥有真实的疼痛、健康与饥渴属性。这些数值不是硬编码的触发器，而是通过提示词影响 Agent 的自主决策。</p>
-        </div>
-        <div class="feature-card">
-          <h3>终端沉浸</h3>
-          <p>纯黑底白字的 TUI 界面。你面对的只有冰冷文字——恰如一个批阅奏章的帝王。</p>
-        </div>
-      </div>
-    </div>
-  </section>
-
-  <!-- Architecture -->
-  <section id="architecture">
-    <div class="container">
-      <h2 class="section-title">技术架构</h2>
-      <div class="arch-diagram">
-        <div class="arch-layer" id="arch-player">
-          <span class="arch-label">玩家层</span>
-          <span class="arch-item">TUI 终端界面</span>
-          <span class="arch-item">奏折 / 案卷阅读</span>
-          <span class="arch-item">朱批指令输入</span>
-        </div>
-        <div class="arch-arrow"></div>
-        <div class="arch-layer" id="arch-app">
-          <span class="arch-label">应用层</span>
-          <span class="arch-item">庭审引擎</span>
-          <span class="arch-item">公文流转</span>
-          <span class="arch-item">Agent 调度</span>
-        </div>
-        <div class="arch-arrow"></div>
-        <div class="arch-layer" id="arch-domain">
-          <span class="arch-label">领域层</span>
-          <span class="arch-item">Agent SOUL / Memory</span>
-          <span class="arch-item">生理属性系统</span>
-          <span class="arch-item">刑罚机制</span>
-        </div>
-        <div class="arch-arrow"></div>
-        <div class="arch-layer" id="arch-infra">
-          <span class="arch-label">基础设施层</span>
-          <span class="arch-item">LLM API</span>
-          <span class="arch-item">持久化存储</span>
-          <span class="arch-item">Textual / Rich</span>
-        </div>
-      </div>
-      <div class="tech-stack">
-        <span class="tech-tag">Python 3.11+</span>
-        <span class="tech-tag">Textual</span>
-        <span class="tech-tag">Rich</span>
-        <span class="tech-tag">OpenRouter</span>
-        <span class="tech-tag">DeepSeek API</span>
-        <span class="tech-tag">uv</span>
-      </div>
-    </div>
-  </section>
-
-  <!-- Roadmap -->
-  <section id="roadmap">
-    <div class="container">
-      <h2 class="section-title">开发路线</h2>
-      <div class="timeline">
-        <div class="timeline-item active">
-          <div class="timeline-marker">壹</div>
-          <div class="timeline-content">
-            <h3>阶段一：审讯逻辑验证</h3>
-            <p>跑通终端对话流程，验证嫌犯 Agent 能在生理属性变化下涌现出屈打成招与攀咬行为。</p>
-          </div>
-        </div>
-        <div class="timeline-item">
-          <div class="timeline-marker">贰</div>
-          <div class="timeline-content">
-            <h3>阶段二：奏折交互</h3>
-            <p>县令 Agent 基于原案自动生成明发/密折，玩家可在 TUI 中阅读与批示。</p>
-          </div>
-        </div>
-        <div class="timeline-item">
-          <div class="timeline-marker">叁</div>
-          <div class="timeline-content">
-            <h3>阶段三：刑罚强化</h3>
-            <p>细化刑罚 API 对生理属性的扣减规则，增强审讯的压迫感与真实感。</p>
-          </div>
-        </div>
-        <div class="timeline-item">
-          <div class="timeline-marker">肆</div>
-          <div class="timeline-content">
-            <h3>阶段四：多 Agent 互联</h3>
-            <p>将被攀咬的新人物实例化为 Agent，通过明发奏折触发其他官员的连锁反应。</p>
-          </div>
-        </div>
-      </div>
+      <blockquote class="reveal">
+        <p>"整个政治制度像一个巨大的声音过滤器——真相在层层传递中被逐渐消磨，取而代之的是各级官僚精心编织的叙事。"</p>
+        <cite>—— 改编自 Philip A. Kuhn《叫魂：1768年中国妖术大恐慌》</cite>
+      </blockquote>
     </div>
   </section>
 
   <!-- CTA -->
   <section id="cta">
     <div class="container">
-      <div class="cta-box">
+      <div class="cta-box reveal">
         <h2>谎言的自我增殖，就此开始</h2>
         <p>乞丐为活命编造虚假特征，官府按图索骥抓捕无辜者。<br>被抓者为免受酷刑继续顺着谎言编造，最终拼凑成虚构的"谋反阴谋"。</p>
         <div class="cta-actions">

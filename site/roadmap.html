@@ -1,0 +1,247 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>开发路线 — 叫魂 Soulstealer</title>
+  <meta name="description" content="叫魂项目开发路线图：从单点审讯到多Agent互联的四阶段演进路径。">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📜</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="subpage">
+  <canvas id="ink-bg"></canvas>
+
+  <nav id="navbar">
+    <a href="index.html" class="nav-logo">叫魂</a>
+    <button class="nav-toggle" aria-label="菜单">☰</button>
+    <div class="nav-links">
+      <a href="about.html">背景</a>
+      <a href="gameplay.html">玩法</a>
+      <a href="architecture.html">架构</a>
+      <a href="roadmap.html" class="active">路线</a>
+      <a href="https://github.com/QiuYi111/soulstealer" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </nav>
+
+  <header class="page-header">
+    <div class="container">
+      <p class="page-eyebrow">肆 · 开发路线</p>
+      <h1 class="page-title">四阶段演进</h1>
+      <p class="page-desc">从单点审讯到多Agent互联——垂直切片，逐步验证</p>
+    </div>
+  </header>
+
+  <!-- Roadmap -->
+  <section>
+    <div class="container">
+      <div class="roadmap-full">
+
+        <!-- Phase 1 -->
+        <div class="roadmap-phase reveal">
+          <div class="phase-header phase-active">
+            <div class="phase-number">壹</div>
+            <div class="phase-info">
+              <h2>审讯逻辑验证</h2>
+              <span class="phase-status">当前阶段</span>
+            </div>
+          </div>
+          <div class="phase-body">
+            <p class="phase-goal">
+              <strong>核心目标</strong>：跑通终端对话流程，验证嫌犯 Agent 能在生理属性变化下涌现出屈打成招与攀咬行为。
+            </p>
+            <div class="phase-tasks">
+              <h3>具体任务</h3>
+              <ul>
+                <li>
+                  <span class="task-done">✓</span>
+                  <strong>Agent 三级缓存</strong>：实现 SOUL / Memory / Relationships 的加载、存储和按需调取。
+                </li>
+                <li>
+                  <span class="task-done">✓</span>
+                  <strong>庭审引擎</strong>：构建 <code>CourtSession</code> 核心黑盒，管理生理状态和动作逻辑。
+                </li>
+                <li>
+                  <span class="task-done">✓</span>
+                  <strong>刑罚 API</strong>：实现夹棍、拶指、鞭笞等刑具的确定性数值扣减。
+                </li>
+                <li>
+                  <span class="task-done">✓</span>
+                  <strong>生理状态提示词注入</strong>：将数值状态转化为自然语言描述注入 Agent 提示词。
+                </li>
+                <li>
+                  <span class="task-wip">◎</span>
+                  <strong>涌现行为验证</strong>：确认 Agent 在高压下能自主涌现出"屈打成招"和"攀咬无辜"行为，而非硬编码触发。
+                </li>
+              </ul>
+            </div>
+            <div class="phase-deliverable">
+              <h3>交付物</h3>
+              <p>一个可以在终端中运行的完整审讯流程：玩家（作为县令）与嫌犯 Agent（阿二）的对话，包含刑罚施加和生理状态变化。</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Phase 2 -->
+        <div class="roadmap-phase reveal">
+          <div class="phase-header">
+            <div class="phase-number">贰</div>
+            <div class="phase-info">
+              <h2>奏折交互系统</h2>
+              <span class="phase-status phase-future">计划中</span>
+            </div>
+          </div>
+          <div class="phase-body">
+            <p class="phase-goal">
+              <strong>核心目标</strong>：县令 Agent 基于原案自动生成明发/密折，玩家可在 TUI 中阅读与批示。
+            </p>
+            <div class="phase-tasks">
+              <h3>具体任务</h3>
+              <ul>
+                <li>
+                  <span class="task-todo">○</span>
+                  <strong>奏折生成</strong>：官员 Agent 读取 Cases 原案记录，自主撰写明发奏折和密折。
+                </li>
+                <li>
+                  <span class="task-todo">○</span>
+                  <strong>双轨差异</strong>：确保同一官员在明发奏折和密折中展现不同的叙事策略。
+                </li>
+                <li>
+                  <span class="task-todo">○</span>
+                  <strong>朱批界面</strong>：TUI 中实现奏折阅读和朱批输入的交互界面。
+                </li>
+                <li>
+                  <span class="task-todo">○</span>
+                  <strong>压力传导</strong>：朱批内容影响官员 Agent 的政治压力参数，改变后续审讯和奏折行为。
+                </li>
+                <li>
+                  <span class="task-todo">○</span>
+                  <strong>案卷调阅</strong>：实现消耗资源调阅原始案卷的机制，与奏折形成信息对比。
+                </li>
+              </ul>
+            </div>
+            <div class="phase-deliverable">
+              <h3>交付物</h3>
+              <p>完整的"乾隆视角"体验：玩家阅读奏折、发现破绽、下达朱批、观察官员反应。核心信息博弈闭环完成。</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Phase 3 -->
+        <div class="roadmap-phase reveal">
+          <div class="phase-header">
+            <div class="phase-number">叁</div>
+            <div class="phase-info">
+              <h2>刑罚强化逻辑</h2>
+              <span class="phase-status phase-future">计划中</span>
+            </div>
+          </div>
+          <div class="phase-body">
+            <p class="phase-goal">
+              <strong>核心目标</strong>：细化刑罚 API 对生理属性的扣减规则，增强审讯的压迫感与真实感。
+            </p>
+            <div class="phase-tasks">
+              <h3>具体任务</h3>
+              <ul>
+                <li>
+                  <span class="task-todo">○</span>
+                  <strong>累积效应</strong>：同一刑具多次使用的效果递减/递增（如反复夹棍会导致永久损伤）。
+                </li>
+                <li>
+                  <span class="task-todo">○</span>
+                  <strong>昏厥机制</strong>：当生理状态超过阈值时触发昏厥，需要等待恢复或泼水唤醒。
+                </li>
+                <li>
+                  <span class="task-todo">○</span>
+                  <strong>死亡判定</strong>：健康值归零导致嫌犯死亡，案件终止但引发政治后果。
+                </li>
+                <li>
+                  <span class="task-todo">○</span>
+                  <strong>组合刑罚</strong>：支持多种刑罚组合使用，模拟真实的审讯策略。
+                </li>
+                <li>
+                  <span class="task-todo">○</span>
+                  <strong>时间流逝</strong>：审讯之间的时间流逝影响饥渴值，增加生存压力。
+                </li>
+              </ul>
+            </div>
+            <div class="phase-deliverable">
+              <h3>交付物</h3>
+              <p>更真实、更具压迫感的审讯系统。生理状态不再只是数字，而是通过细致的描述和涌现行为让玩家感受到制度性暴力的残酷。</p>
+            </div>
+          </div>
+        </div>
+
+        <!-- Phase 4 -->
+        <div class="roadmap-phase reveal">
+          <div class="phase-header">
+            <div class="phase-number">肆</div>
+            <div class="phase-info">
+              <h2>多 Agent 互联</h2>
+              <span class="phase-status phase-future">计划中</span>
+            </div>
+          </div>
+          <div class="phase-body">
+            <p class="phase-goal">
+              <strong>核心目标</strong>：将被攀咬的新人物实例化为 Agent，通过明发奏折触发其他官员的连锁反应。
+            </p>
+            <div class="phase-tasks">
+              <h3>具体任务</h3>
+              <ul>
+                <li>
+                  <span class="task-todo">○</span>
+                  <strong>动态实例化</strong>：当嫌犯攀咬某人时，系统自动创建新的 Agent 实例（基于模板 + 随机生成背景）。
+                </li>
+                <li>
+                  <span class="task-todo">○</span>
+                  <strong>连锁审讯</strong>：新被捕者进入审讯流程，可能继续攀咬更多人。
+                </li>
+                <li>
+                  <span class="task-todo">○</span>
+                  <strong>跨区域联动</strong>：明发奏折被其他地区官员读到后，触发新的抓捕和审讯行动。
+                </li>
+                <li>
+                  <span class="task-todo">○</span>
+                  <strong>恐慌指数</strong>：全局性的恐慌水平指标，随案件数量和奏折内容动态变化。
+                </li>
+                <li>
+                  <span class="task-todo">○</span>
+                  <strong>系统终局</strong>：当恐慌指数达到极端值或皇帝下旨停止追查时，触发系统终局评估。</span>
+                </li>
+              </ul>
+            </div>
+            <div class="phase-deliverable">
+              <h3>交付物</h3>
+              <p>一个真正动态的、能自我演化的叫魂恐慌模拟系统。谎言的增殖不再局限于单个审讯室，而是能在整个官僚网络中蔓延。</p>
+            </div>
+            <div class="callout">
+              <div class="callout-title">终极愿景</div>
+              <p>
+                当阶段四完成时，《叫魂》将不再只是一个"游戏"——它将成为一个可以复现历史动力学的社会学实验平台。每一个 Agent 的选择、每一份奏折的措辞、每一次朱批的压力传导，共同编织出一段独特的历史叙事。
+              </p>
+            </div>
+          </div>
+        </div>
+
+      </div>
+
+      <!-- CTA at bottom -->
+      <div class="nav-bottom">
+        <a href="https://github.com/QiuYi111/soulstealer" target="_blank" rel="noopener" class="btn btn-primary">前往 GitHub 参与开发</a>
+        <a href="index.html" class="btn btn-outline">← 返回首页</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <div class="footer-inner">
+        <span>叫魂 Soulstealer &copy; 2025</span>
+        <span>基于 Philip A. Kuhn《叫魂：1768年中国妖术大恐慌》</span>
+        <a href="https://github.com/QiuYi111/soulstealer" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+</html>

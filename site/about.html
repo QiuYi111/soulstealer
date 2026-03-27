@@ -1,0 +1,141 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>历史背景 — 叫魂 Soulstealer</title>
+  <meta name="description" content="1768年叫魂妖术大恐慌的历史背景。从江南到直隶，一场席卷大清帝国的政治恐慌如何演变为全社会的癫狂。">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📜</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="subpage">
+  <canvas id="ink-bg"></canvas>
+
+  <nav id="navbar">
+    <a href="index.html" class="nav-logo">叫魂</a>
+    <button class="nav-toggle" aria-label="菜单">☰</button>
+    <div class="nav-links">
+      <a href="about.html" class="active">背景</a>
+      <a href="gameplay.html">玩法</a>
+      <a href="architecture.html">架构</a>
+      <a href="roadmap.html">路线</a>
+      <a href="https://github.com/QiuYi111/soulstealer" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </nav>
+
+  <!-- Page Header -->
+  <header class="page-header">
+    <div class="container">
+      <p class="page-eyebrow">壹 · 历史背景</p>
+      <h1 class="page-title">一七六八年的叫魂恐慌</h1>
+      <p class="page-desc">一场关于妖术剪辫的恐慌，如何从江南水乡蔓延至帝国的权力中枢？</p>
+    </div>
+  </header>
+
+  <!-- Historical Context -->
+  <section>
+    <div class="container content-flow">
+      <h2 class="content-heading">恐慌的起源</h2>
+      <p>
+        乾隆三十三年（1768年）春，一股关于"叫魂"妖术的恐慌从浙江德清县悄然蔓延。民间传言，妖道与乞丐通过剪取他人发辫、窃取衣物和姓名，能够摄取灵魂、驱使鬼魅。这种恐慌迅速从江南地区向北方扩散，席卷了大半个清帝国。
+      </p>
+      <p>
+        在这个看似荒诞的妖术恐慌背后，隐藏着一个更为深层的社会动力学机制——一个关于<strong>权力、信息与生存</strong>的复杂博弈。
+      </p>
+
+      <h2 class="content-heading">三条生存压力链</h2>
+      <p>
+        叫魂恐慌之所以能从地方事件演变为全国性危机，根植于清帝国社会结构的三个层级之间形成的一条完整的"生存压力链"：
+      </p>
+
+      <div class="role-grid reveal">
+        <div class="role-card">
+          <div class="role-badge role-emperor">朕</div>
+          <h3>乾隆皇帝 — 权力的顶端</h3>
+          <p>
+            表面上，乾隆帝通过追查"叫魂"妖术来维护社会秩序、保护百姓。但更深层的动机是利用这一事件作为<strong>政治忠诚测试</strong>——借妖术案之名，审视官僚系统是否对他绝对服从。
+          </p>
+          <p>
+            皇帝居于深宫，对基层的了解完全依赖奏折和密折。他看到的永远是经过层层过滤和润色的"二手真相"。在他眼中，叫魂案不仅仅是一桩刑事案件，更是一面照妖镜——照出哪些官员勤勉，哪些官员怠惰，哪些官员在欺瞒他。
+          </p>
+          <div class="role-detail">
+            <strong>玩家的角色：</strong>在游戏中，你就是乾隆。你的信息来源只有奏折与案卷，你的权力工具只有朱批。你永远无法确定：你读到的是真相，还是官员精心编织的故事。
+          </div>
+        </div>
+
+        <div class="role-card">
+          <div class="role-badge role-official">令</div>
+          <h3>基层官员 — 夹缝中的生存者</h3>
+          <p>
+            县令们处于整个权力链条的中间环节。他们面临的处境极其微妙：向上，皇帝要求严查叫魂、限期破案；向下，基层社会根本没有有组织的"叫魂妖党"可供抓捕。
+          </p>
+          <p>
+            在这种结构性矛盾下，官员们做出了理性的选择：<strong>不关心真相，只关心结案</strong>。他们需要交出"罪犯"来保住乌纱帽，需要把审讯记录润色得符合上级预期，需要在明发奏折中展现忠诚与能力——同时通过密折暗中推卸责任。
+          </p>
+          <div class="role-detail">
+            <strong>AI 行为设计：</strong>官员 Agent 在政治压力下会自主进行信息过滤。他们在撰写明发奏折时会美化案情、突出功绩；在密折中则可能暗示困难、请求从宽。这种双重叙事不是硬编码的，而是 Agent 在理解自身处境后的自主涌现。
+          </div>
+        </div>
+
+        <div class="role-card">
+          <div class="role-badge role-suspect">囚</div>
+          <h3>底层嫌犯 — 最脆弱的环节</h3>
+          <p>
+            在叫魂恐慌中被捕的大多是社会最底层的群体：游方僧道、乞丐、流浪手艺人。他们没有任何权力资源，唯一的"武器"是自己的嘴巴。
+          </p>
+          <p>
+            在严刑拷打下，他们面临着最残酷的选择：<strong>继续坚持真相而承受更大的痛苦</strong>，还是<strong>编造一个符合官员预期的"剧本"以求活命</strong>？大多数人选择了后者——而这些被迫编造的"供述"，又成为官员向上报告的"证据"，进一步加剧了恐慌。
+          </p>
+          <div class="role-detail">
+            <strong>生理系统：</strong>嫌犯 Agent 拥有真实的生理属性（疼痛、健康、饥渴），这些数值通过提示词影响 AI 的自主决策。当痛苦超过阈值，Agent 会"选择"招供；当被告知攀咬他人可以减轻刑罚，Agent 可能开始编造同谋。一切都不是硬编码的触发器，而是 LLM 的涌现行为。
+          </div>
+        </div>
+      </div>
+
+      <h2 class="content-heading">谎言的自我增殖</h2>
+      <div class="callout reveal">
+        <div class="callout-title">核心机制</div>
+        <p>
+          这是叫魂恐慌最恐怖的动力学特征：<strong>谎言不需要任何人"策划"就能自我增殖</strong>。
+        </p>
+        <ol>
+          <li><strong>底层</strong>：乞丐在酷刑下编造虚假的"妖党"特征和同谋名单。</li>
+          <li><strong>中层</strong>：县令将这份编造的"供述"润色为正式的案卷和奏折，上报朝廷。</li>
+          <li><strong>顶层</strong>：乾隆帝阅读奏折后认为妖术威胁确实严重，下达更严厉的追查令。</li>
+          <li><strong>回到底层</strong>：更严厉的追查令意味着更大的政治压力，意味着更多的酷刑，意味着更多编造的供词……</li>
+        </ol>
+        <p>
+          在这个正反馈循环中，<strong>没有任何一个人在说"真话"</strong>，但整个系统产生了一个看似逻辑自洽的"妖术阴谋"。这不是一个阴谋论——这是一个由结构性压力自我催化的信息畸变。
+        </p>
+      </div>
+
+      <h2 class="content-heading">学术基础</h2>
+      <p>
+        本项目的核心设计灵感来源于已故哈佛大学历史学家<strong>孔飞力（Philip A. Kuhn）</strong>的学术著作《叫魂：1768年中国妖术大恐慌》（<em>Soulstealers: The Chinese Sorcery Scare of 1768</em>）。
+      </p>
+      <p>
+        孔飞力通过详尽的档案研究揭示了叫魂恐慌背后复杂的社会动力学：它不是一个简单的"迷信事件"，而是一个展现了<strong>专制权力、官僚制度与底层社会</strong>三者互动的绝佳案例。
+      </p>
+      <p>
+        《叫魂》游戏试图将这一历史分析转化为一个可交互的模拟系统——让玩家亲身体验信息在权力链条中是如何被扭曲、放大和再生产的。
+      </p>
+
+      <div class="nav-bottom">
+        <a href="gameplay.html" class="btn btn-primary">下一章：核心玩法机制 →</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <div class="footer-inner">
+        <span>叫魂 Soulstealer &copy; 2025</span>
+        <span>基于 Philip A. Kuhn《叫魂：1768年中国妖术大恐慌》</span>
+        <a href="https://github.com/QiuYi111/soulstealer" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+</html>

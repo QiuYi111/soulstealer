@@ -1,0 +1,319 @@
+<!DOCTYPE html>
+<html lang="zh-CN">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>核心玩法 — 叫魂 Soulstealer</title>
+  <meta name="description" content="叫魂游戏的核心玩法机制：信息过滤、朱批施压、AI涌现行为、双轨奏折、生理系统、终端沉浸。">
+  <link rel="icon" href="data:image/svg+xml,<svg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'><text y='.9em' font-size='90'>📜</text></svg>">
+  <link rel="stylesheet" href="style.css">
+</head>
+<body class="subpage">
+  <canvas id="ink-bg"></canvas>
+
+  <nav id="navbar">
+    <a href="index.html" class="nav-logo">叫魂</a>
+    <button class="nav-toggle" aria-label="菜单">☰</button>
+    <div class="nav-links">
+      <a href="about.html">背景</a>
+      <a href="gameplay.html" class="active">玩法</a>
+      <a href="architecture.html">架构</a>
+      <a href="roadmap.html">路线</a>
+      <a href="https://github.com/QiuYi111/soulstealer" target="_blank" rel="noopener">GitHub</a>
+    </div>
+  </nav>
+
+  <header class="page-header">
+    <div class="container">
+      <p class="page-eyebrow">贰 · 核心机制</p>
+      <h1 class="page-title">六大核心系统</h1>
+      <p class="page-desc">一个关于信息、权力与生存的复合博弈系统</p>
+    </div>
+  </header>
+
+  <!-- System 1: Information Filter -->
+  <section class="mechanic-section">
+    <div class="container content-flow">
+      <div class="mechanic-number">壹</div>
+      <h2 class="content-heading">信息过滤系统</h2>
+      <p class="mechanic-lead">你看到的，是官员想让你看到的。</p>
+
+      <p>
+        玩家的信息来源只有两类文件，它们之间存在巨大的信息差：
+      </p>
+
+      <div class="dual-panel reveal">
+        <div class="panel panel-faded">
+          <h3>奏折（Letters）</h3>
+          <p>
+            地方官员递交的正式报告。这些文本经过了严重的粉饰、推诿和"润色"。官员会在其中：
+          </p>
+          <ul>
+            <li>夸大自己的勤勉与功绩</li>
+            <li>淡化审讯中的刑讯逼供</li>
+            <li>将编造的供词包装为"证据确凿"</li>
+            <li>巧妙推卸案件未能按时告破的责任</li>
+          </ul>
+        </div>
+        <div class="panel panel-raw">
+          <h3>案卷（Cases）</h3>
+          <p>
+            基层审讯的原始记录。保留了犯人受刑时的真实惨状和胡言乱语。需要消耗特定资源（如派出密探）才能调阅。其中包含：
+          </p>
+          <ul>
+            <li>嫌犯在酷刑下的原始对话</li>
+            <li>生理状态变化的实时记录</li>
+            <li>前后矛盾、胡编乱造的"供述"</li>
+            <li>刀笔吏润色前的案卷底稿</li>
+          </ul>
+        </div>
+      </div>
+
+      <p>
+        游戏的核心体验在于<strong>信息审计</strong>——在"虚假的奏折"与"混乱的原案"之间比对，像批阅奏章的真实帝王一样，在字里行间寻找官员撒谎和推卸责任的逻辑破绽。
+      </p>
+    </div>
+  </section>
+
+  <!-- System 2: Rescript -->
+  <section class="mechanic-section mechanic-alt">
+    <div class="container content-flow">
+      <div class="mechanic-number">贰</div>
+      <h2 class="content-heading">朱批施压系统</h2>
+      <p class="mechanic-lead">你的每一个字，都是压在官员头上的千钧之力。</p>
+
+      <p>
+        玩家通过对奏折下达"朱批"来施加政治压力。朱批分为三种类型，对应不同的压力等级：
+      </p>
+
+      <div class="rescript-grid reveal">
+        <div class="rescript-card">
+          <div class="rescript-type">指示</div>
+          <h3>明确指示</h3>
+          <p>告诉官员你的期望——"此案务必限期告破"、"严查妖党余孽"。这会增加官员的结案压力。</p>
+          <div class="rescript-effect">
+            <span class="effect-label">系统效果</span>
+            <span>提升官员 Agent 的政治压力参数 → 加大用刑力度 → 嫌犯生理属性加速扣减</span>
+          </div>
+        </div>
+        <div class="rescript-card">
+          <div class="rescript-type">斥责</div>
+          <h3>严厉斥责</h3>
+          <p>"糊涂！""此奏荒谬！""办理不力，着即严加查办！"——直接威胁官员的仕途。</p>
+          <div class="rescript-effect">
+            <span class="effect-label">系统效果</span>
+            <span>官员 Agent 可能产生"恐慌"情绪 → 在奏折中更加美化案情 → 在审讯中更激进</span>
+          </div>
+        </div>
+        <div class="rescript-card">
+          <div class="rescript-type">革职</div>
+          <h3>革职警告</h3>
+          <p>"再办不成，便提头来见"。最高级别的压力，相当于"政治死刑"威胁。</p>
+          <div class="rescript-effect">
+            <span class="effect-label">系统效果</span>
+            <span>官员 Agent 进入"自保模式" → 不择手段结案 → 可能直接编造案卷</span>
+          </div>
+        </div>
+      </div>
+
+      <p>
+        政治压力的传导不是线性的。一个"斥责"朱批可能让谨慎的官员变得激进，也可能让狡猾的官员学会更精致的粉饰——这取决于 Agent 的个性和过往经历。
+      </p>
+    </div>
+  </section>
+
+  <!-- System 3: AI Emergence -->
+  <section class="mechanic-section">
+    <div class="container content-flow">
+      <div class="mechanic-number">叁</div>
+      <h2 class="content-heading">AI 涌现行为</h2>
+      <p class="mechanic-lead">不是代码触发，而是自主决策。</p>
+
+      <p>
+        这是《叫魂》最核心的技术创新：游戏中所有 Agent 的行为都不是通过预设的规则树或硬编码触发器产生的，而是由大语言模型（LLM）在理解自身处境后<strong>自主涌现</strong>的。
+      </p>
+
+      <div class="emergence-grid reveal">
+        <div class="emergence-card">
+          <h3>嫌犯的"自由意志"</h3>
+          <p>
+            嫌犯 Agent 没有被硬编码为"当疼痛 > 70 时自动招供"。相反，系统将当前的生理状态以自然语言描述注入提示词：
+          </p>
+          <div class="prompt-example">
+            <div class="prompt-label">提示词注入示例</div>
+            <pre>你正处于强烈的生理痛苦中，神志恍惚。
+你感到喉咙异常干涩。
+审讯官说：再不说实话，还有更厉害的等着你。</pre>
+          </div>
+          <p>
+            AI 在此基础上自主决定：是继续死扛？还是编一个故事换取片刻喘息？是攀咬一个路人？还是供出一个真正的仇人？
+          </p>
+        </div>
+        <div class="emergence-card">
+          <h3>官员的"理性选择"</h3>
+          <p>
+            官员 Agent 同样不被硬编码。他们接收的上下文包括：
+          </p>
+          <ul>
+            <li>皇帝朱批的具体内容和语气</li>
+            <li>当前案件的政治敏感度</li>
+            <li>审讯记录中嫌犯的真实供述</li>
+            <li>自身的仕途处境和过往记忆</li>
+          </ul>
+          <p>
+            基于这些信息，官员 Agent 自主决定如何在奏折中呈现案件。他可能选择如实上报，也可能选择选择性遗漏、美化措辞，甚至编造不存在的"进展"。
+          </p>
+        </div>
+      </div>
+    </div>
+  </section>
+
+  <!-- System 4: Dual-Track Letters -->
+  <section class="mechanic-section mechanic-alt">
+    <div class="container content-flow">
+      <div class="mechanic-number">肆</div>
+      <h2 class="content-heading">双轨奏折系统</h2>
+      <p class="mechanic-lead">一明一暗，两张面孔。</p>
+
+      <p>
+        清代的奏折制度分为两种类型，它们在游戏中对应不同的信息可见度和行为约束：
+      </p>
+
+      <div class="dual-track reveal">
+        <div class="track-item">
+          <h3>明发奏折</h3>
+          <div class="track-badge">全国官员可见</div>
+          <p>
+            公开的官方报告。所有官员都能读到，因此官员在撰写明发奏折时会：
+          </p>
+          <ul>
+            <li>展示自己的勤勉和能力</li>
+            <li>使用官方话语体系</li>
+            <li>避免任何可能自陷的文字</li>
+            <li>影响其他官员 Agent 的行为——他们读到后会调整自己的策略</li>
+          </ul>
+        </div>
+        <div class="track-item">
+          <h3>密折</h3>
+          <div class="track-badge track-secret">仅通信双方可见</div>
+          <p>
+            通过密折系统暗中传递的信息。这是玩家审查破绽的核心来源。官员在密折中会：
+          </p>
+          <ul>
+            <li>承认困难和不确定</li>
+            <li>暗中推卸责任或暗示他人失职</li>
+            <li>请求从宽或暗示需要更多资源</li>
+            <li>展现与明发奏折截然不同的叙事</li>
+          </ul>
+        </div>
+      </div>
+
+      <p>
+        <strong>核心玩法</strong>：比对同一官员的明发奏折和密折——两份文件之间的矛盾和差异，就是信息过滤的"破绽"。善于发现这些破绽的玩家，才能真正看透这场政治博弈的本质。
+      </p>
+    </div>
+  </section>
+
+  <!-- System 5: Physiology -->
+  <section class="mechanic-section">
+    <div class="container content-flow">
+      <div class="mechanic-number">伍</div>
+      <h2 class="content-heading">生理属性系统</h2>
+      <p class="mechanic-lead">不是代码的触发器，而是影响灵魂的砝码。</p>
+
+      <p>
+        嫌犯 Agent 拥有四项真实的生理属性，它们不是硬编码的行为阻断器，而是通过提示词自然地影响 Agent 的决策过程：
+      </p>
+
+      <div class="physio-table reveal">
+        <div class="physio-row physio-header">
+          <span>属性</span>
+          <span>范围</span>
+          <span>提示词转化</span>
+          <span>行为影响</span>
+        </div>
+        <div class="physio-row">
+          <span class="physio-name">疼痛 Pain</span>
+          <span>0 — 100</span>
+          <span>隐隐作痛 → 钻心剜骨 → 意识模糊</span>
+          <span>影响思维清晰度与决策理性</span>
+        </div>
+        <div class="physio-row">
+          <span class="physio-name">健康 Health</span>
+          <span>0 — 100</span>
+          <span>尚能支撑 → 气息奄奄 → 死亡</span>
+          <span>决定 Agent 能否继续受审</span>
+        </div>
+        <div class="physio-row">
+          <span class="physio-name">饥渴 Thirst</span>
+          <span>0 — 100</span>
+          <span>口渴 → 喉咙如火烧 → 愿做任何事换水</span>
+          <span>削弱意志力，增加招供倾向</span>
+        </div>
+        <div class="physio-row">
+          <span class="physio-name">饥饿 Hunger</span>
+          <span>0 — 100</span>
+          <span>饥饿 → 虚弱 → 无法集中</span>
+          <span>影响供述的连贯性和可信度</span>
+        </div>
+      </div>
+
+      <p>
+        刑罚 API 对这些属性的扣减是确定性的（如"夹棍"固定增加 30 疼痛、减少 15 健康），但属性值对 Agent 行为的影响是<strong>模糊的、涌现的</strong>——这正如同真实世界中，痛苦对人的影响不是"到达阈值就崩溃"这么简单。
+      </p>
+    </div>
+  </section>
+
+  <!-- System 6: TUI -->
+  <section class="mechanic-section mechanic-alt">
+    <div class="container content-flow">
+      <div class="mechanic-number">陆</div>
+      <h2 class="content-heading">终端沉浸体验</h2>
+      <p class="mechanic-lead">纯文字，恰如一个批阅奏章的帝王。</p>
+
+      <p>
+        《叫魂》采用纯 TUI（终端文本界面）实现，完全摒弃图形界面。这种极简的设计选择并非妥协，而是一种刻意的审美决策：
+      </p>
+
+      <div class="tui-features reveal">
+        <div class="tui-feature">
+          <h3>信息密度最大化</h3>
+          <p>纯文字界面迫使玩家专注于信息本身——措辞的微妙差异、前后的逻辑矛盾、刻意省略的细节。没有视觉干扰，只有冰冷文字。</p>
+        </div>
+        <div class="tui-feature">
+          <h3>历史沉浸感</h3>
+          <p>黑底白字的终端界面复刻了"案牍查阅"的冰冷氛围。你面对的不是游戏画面，而是一份份需要你亲自审阅的公文。</p>
+        </div>
+        <div class="tui-feature">
+          <h3>交互设计</h3>
+          <p>
+            使用 Textual 框架构建高质量的终端面板。交互通过命令行指令实现，例如：
+          </p>
+          <div class="cmd-example">
+            <code>/torture 夹棍 "说！到底是谁教你妖术的？"</code>
+          </div>
+          <p>
+            这种输入方式本身就是一种"权力"的体现——你输入命令，底层执行。正如一个帝王不会亲自动手，只会下达指令。
+          </p>
+        </div>
+      </div>
+
+      <div class="nav-bottom">
+        <a href="architecture.html" class="btn btn-primary">下一章：技术架构 →</a>
+      </div>
+    </div>
+  </section>
+
+  <footer>
+    <div class="container">
+      <div class="footer-inner">
+        <span>叫魂 Soulstealer &copy; 2025</span>
+        <span>基于 Philip A. Kuhn《叫魂：1768年中国妖术大恐慌》</span>
+        <a href="https://github.com/QiuYi111/soulstealer" target="_blank" rel="noopener">GitHub</a>
+      </div>
+    </div>
+  </footer>
+
+  <script src="main.js"></script>
+</body>
+</html>
