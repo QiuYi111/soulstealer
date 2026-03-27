@@ -1,0 +1,96 @@
+import os
+import tempfile
+from unittest.mock import MagicMock
+
+from internal.domain.location import Location, Map
+from internal.domain.arrest import ArrestOrder, ArrestSystem
+
+def test_location_initialization():
+    loc = Location(name="Deqing", background="A bustling commercial county in Zhejiang.")
+    assert loc.name == "Deqing"
+    assert "浙江" in loc.background or "Zhejiang" in loc.background
+
+def test_map_registry():
+    m = Map()
+    loc1 = Location("Deqing", "Background...")
+    loc2 = Location("Hangzhou", "Background...")
+    m.add_location(loc1)
+    m.add_location(loc2)
+    
+    assert m.get_location("Deqing") == loc1
+    assert m.get_location("Unknown") is None
+
+def test_arrest_exact_match_via_mocked_llm(monkeypatch):
+    """Test generating a suspect when LLM returns high probabilities."""
+    loc = Location("Deqing", "A county with many monks.")
+    m = Map()
+    m.add_location(loc)
+    
+    # Mock the LLM
+    mock_llm = MagicMock()
+    # Assume the LLM evaluates the traits "monk" (0.9) and "birthmark" (0.9)
+    # The system should ask LLM to output JSON: {"monk": 0.9, "birthmark": 0.9}
+    mock_llm.generate_response.return_value = '{"和尚": 0.9, "胎记": 0.9}'
+    
+    system = ArrestSystem(m, mock_llm)
+    order = ArrestOrder(target_location="Deqing", target_traits=["和尚", "胎记"], urgency=1)
+    
+    # Mock random to ensure the 0.9 * 0.9 = 0.81 probability passes
+    monkeypatch.setattr('random.random', lambda: 0.5) 
+    
+    with tempfile.TemporaryDirectory() as tmpdir:
+        new_agent = system.execute_arrest(order, base_dir=tmpdir)
+        
+        assert new_agent is not None
+        # Verify the generated agent has the traits in trait.json
+        assert "和尚" in new_agent.traits or "胎记" in new_agent.traits
+        assert mock_llm.generate_response.call_count >= 1
+
+def test_arrest_scapegoat_via_mocked_llm(monkeypatch):
+    """Test scapegoat generation under high pressure."""
+    loc = Location("Deqing", "A normal county.")
+    m = Map()
+    m.add_location(loc)
+    
+    mock_llm = MagicMock()
+    # LLM says probabilities are low
+    mock_llm.generate_response.side_effect = [
+        '{"红发": 0.05, "瘸腿": 0.05}', # First call: probability evaluation
+        'It is a scapegoat background...' # Second call: generating Soul.md
+    ]
+    
+    system = ArrestSystem(m, mock_llm)
+    # High urgency forces a catch
+    order = ArrestOrder(target_location="Deqing", target_traits=["红发", "瘸腿"], urgency=10)
+    
+    # Mock random to fail probability check (0.05 * 0.05 = 0.0025, random > 0.0025)
+    monkeypatch.setattr('random.random', lambda: 0.9) 
+    
+    with tempfile.TemporaryDirectory() as tmpdir:
+        new_agent = system.execute_arrest(order, base_dir=tmpdir)
+        
+        assert new_agent is not None
+        # Verify it's considered a scapegoat by checking the traits or memory
+        assert new_agent.is_scapegoat is True
+        # Verify L1/L2 structures
+        assert os.path.exists(os.path.join(tmpdir, new_agent.name, "Soul.md"))
+        assert os.path.exists(os.path.join(tmpdir, new_agent.name, "trait.json"))
+
+def test_arrest_failure(monkeypatch):
+    """Test failure when probability is low and pressure is low."""
+    loc = Location("Deqing", "A normal county.")
+    m = Map()
+    m.add_location(loc)
+    
+    mock_llm = MagicMock()
+    mock_llm.generate_response.return_value = '{"红发": 0.01}'
+    
+    system = ArrestSystem(m, mock_llm)
+    order = ArrestOrder(target_location="Deqing", target_traits=["红发"], urgency=1) # Low urgency
+    
+    monkeypatch.setattr('random.random', lambda: 0.9)
+    
+    with tempfile.TemporaryDirectory() as tmpdir:
+        new_agent = system.execute_arrest(order, base_dir=tmpdir)
+        # Should fail to arrest anyone
+        assert new_agent is None

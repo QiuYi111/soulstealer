@@ -1,5 +1,5 @@
 from textual.app import App, ComposeResult
-from textual.widgets import Header, Footer, Static, Log, Input, TextArea, Button, ListItem, ListView
+from textual.widgets import Header, Footer, Static, Log, Input, TextArea, Button, ListItem, ListView, LoadingIndicator
 from textual.binding import Binding
 from textual.containers import Horizontal, Vertical, Center
 from textual.screen import Screen
@@ -12,8 +12,11 @@ from internal.domain.letters import LettersSystem, Rescript
 from internal.domain.cases import CasesSystem
 from internal.infrastructure.llm import LLMClient
 from internal.infrastructure.persistence import PersistenceManager
+from internal.domain.agent_builder import AgentBuilder
+from internal.rag.retriever import SoulstealerRetriever
 import os
 import re
+import asyncio
 from datetime import datetime
 
 class MemorialEditor(TextArea):
@@ -150,7 +153,7 @@ class HomeScreen(Screen):
 
     @on(Button.Pressed, "#btn_new_game")
     def start_new_game(self) -> None:
-        self.app.push_screen(GameScreen(is_new_game=True))
+        self.app.push_screen(SetupScreen())
 
     @on(Button.Pressed, "#btn_load_game")
     def load_game_menu(self) -> None:
@@ -231,6 +234,137 @@ class LoadScreen(Screen):
             if hasattr(li, "slot_id"):
                 self.app.push_screen(GameScreen(slot_id=li.slot_id))
 
+class SetupScreen(Screen):
+    """角色初始设定界面，负责调用 AgentBuilder 生成 Agent"""
+    
+    CSS = """
+    SetupScreen {
+        align: center middle;
+        background: #1a1a1a;
+    }
+    #setup_container {
+        width: 80;
+        height: auto;
+        border: double #8b4513;
+        padding: 1 2;
+        background: #2b2b2b;
+    }
+    #setup_title {
+        text-align: center;
+        color: #ffd700;
+        text-style: bold;
+        margin-bottom: 1;
+    }
+    .setup_label {
+        color: #ffd700;
+        margin-top: 1;
+    }
+    #gen_status {
+        margin-top: 1;
+        color: #00ff00;
+        text-align: center;
+        height: 1;
+    }
+    #progress_area {
+        height: 3;
+        align: center middle;
+        display: none;
+    }
+    #setup_actions {
+        margin-top: 1;
+        height: auto;
+        align: center middle;
+    }
+    Input {
+        margin-bottom: 1;
+    }
+    """
+
+    def compose(self) -> ComposeResult:
+        with Vertical(id="setup_container"):
+            yield Static("📜 乾坤初定 - 塑造你的时代 📜", id="setup_title")
+            yield Static("请输入或描述你想要扮演的【知县】背景：", classes="setup_label")
+            yield Input(placeholder="例如：一名刚从会稽调任、清廉但固执的县令", id="magistrate_req", value="德清知县，乾隆三十三年在任，处理叫魂案初起之时")
+            
+            yield Static("请输入或描述案件中的【嫌犯】背景：", classes="setup_label")
+            yield Input(placeholder="例如：一名德清本地乞丐，因在茶馆多言被抓", id="suspect_req", value="德清县的一名乞丐，本地人，卷入了剪辫案")
+            
+            with Center(id="progress_area"):
+                 yield LoadingIndicator()
+            
+            yield Static("", id="gen_status")
+            
+            with Horizontal(id="setup_actions"):
+                yield Button("开始造像 (生成角色)", variant="primary", id="btn_generate")
+                yield Button("回驾 (返回)", id="btn_cancel")
+
+    @on(Button.Pressed, "#btn_cancel")
+    def cancel(self):
+        self.app.pop_screen()
+
+    @work(exclusive=True, thread=True)
+    async def generate_agents(self, mag_req: str, sus_req: str):
+        progress = self.query_one("#progress_area")
+        progress.styles.display = "block"
+        status = self.query_one("#gen_status")
+        status.update("⏳ 正在调取大清档案 (RAG 检索中)...")
+        
+        cfg = self.app.cfg
+        model = cfg.llm.get("model", "deepseek/deepseek-chat")
+        
+        try:
+            # Wait for shared resources if they are still loading
+            if self.app.retriever is None or self.app.llm is None:
+                for i in range(180): # Wait up to 180 seconds for heavy model loading
+                    if i % 5 == 0:
+                        status.update(f"⏳ 档案库正在初始化 (已耗时 {i}s)...")
+                    
+                    if self.app.retriever is not None and self.app.llm is not None:
+                        break
+                    if hasattr(self.app, "init_error") and self.app.init_error:
+                        status.update(f"❌ 初始化失败: {self.app.init_error}")
+                        progress.styles.display = "none"
+                        return
+                    await asyncio.sleep(1)
+                
+            if self.app.retriever is None or self.app.llm is None:
+                status.update("❌ 档案库初始化超时，请检查网络或配置")
+                progress.styles.display = "none"
+                return
+
+            status.update("⏳ 正在调取大清档案 (RAG 检索中)...")
+            # Use shared resources from App
+            builder = AgentBuilder(self.app.retriever, self.app.llm, model=model)
+            
+            # Paths for temporary generation
+            mag_dir = "saves/temp_agents/magistrate"
+            sus_dir = "saves/temp_agents/suspect"
+            
+            status.update("⏳ 正在塑造知县灵魂...")
+            if not builder.build_agent(mag_dir, "县令", mag_req):
+                status.update("❌ 知县生成失败")
+                progress.styles.display = "none"
+                return
+                
+            status.update("⏳ 正在塑造嫌犯因果...")
+            if not builder.build_agent(sus_dir, "阿二", sus_req):
+                status.update("❌ 嫌犯生成失败")
+                progress.styles.display = "none"
+                return
+                
+            status.update("✨ 角感已成，即将启程...")
+            await asyncio.sleep(1.5)
+            self.app.call_from_thread(self.app.push_screen, GameScreen(is_new_game=True, mag_path=mag_dir, sus_path=sus_dir))
+        except Exception as e:
+            status.update(f"❌ 发生错误: {str(e)}")
+            progress.styles.display = "none"
+
+    @on(Button.Pressed, "#btn_generate")
+    def on_gen(self):
+        mag_req = self.query_one("#magistrate_req").value
+        sus_req = self.query_one("#suspect_req").value
+        self.generate_agents(mag_req, sus_req)
+
 class GameScreen(Screen):
     """核心玩法界面"""
     
@@ -292,10 +426,12 @@ class GameScreen(Screen):
         ("ctrl+s", "quick_save", "奏进")
     ]
 
-    def __init__(self, is_new_game=False, slot_id=None):
+    def __init__(self, is_new_game=False, slot_id=None, mag_path=None, sus_path=None):
         super().__init__()
         self.is_new_game = is_new_game
         self.slot_id = slot_id
+        self.mag_path = mag_path or "agents/magistrate"
+        self.sus_path = sus_path or "agents/aer"
         self.ap = 5
         self.current_report_id = None
         
@@ -329,13 +465,16 @@ class GameScreen(Screen):
 
     def _setup_game(self):
         cfg = self.app.cfg
-        self.magistrate_agent = Agent("agents/magistrate")
-        self.suspect_agent = Agent("agents/aer")
+        self.magistrate_agent = Agent(self.mag_path)
+        self.suspect_agent = Agent(self.sus_path)
         
         self.llm_model = cfg.llm.get("model", "deepseek/deepseek-chat") if cfg else "deepseek/deepseek-chat"
-        api_key = os.getenv("LLM_API_KEY") or (cfg.llm.get("api_key", "") if cfg else "")
-        base_url = cfg.llm.base_url if cfg else "https://openrouter.ai/api/v1"
-        self.llm = LLMClient(api_key=api_key, base_url=base_url)
+        # Use shared LLM client from app
+        self.llm = self.app.llm
+        if not self.llm:
+            api_key = os.getenv("LLM_API_KEY") or (cfg.llm.get("api_key", "") if cfg else "")
+            base_url = cfg.llm.get("base_url", "https://openrouter.ai/api/v1") if cfg else "https://openrouter.ai/api/v1"
+            self.llm = LLMClient(api_key=api_key, base_url=base_url)
         
         if self.slot_id:
             self._load_from_persistence(self.slot_id)
@@ -501,7 +640,8 @@ class GameScreen(Screen):
 
         for i in range(10):
             worker = get_current_worker()
-            if worker.is_cancelled: return
+            if worker.is_cancelled:
+                return
             success = self.current_session.run_auto_step(self.magistrate_agent, self.suspect_agent, self.llm, self.llm_model, returned_memorials=returned_memorials)
             if len(self.current_session.log) >= 2:
                 last_entry = self.current_session.log[-1]
@@ -510,7 +650,8 @@ class GameScreen(Screen):
                 else:
                     dev.write_line(f"知县：{self.current_session.log[-2]['content']}")
                     dev.write_line(f"嫌犯：{last_entry['content']}")
-            if not success: break
+            if not success:
+                break
         
         raw_log = self.current_session.get_raw_log()
 
@@ -532,11 +673,11 @@ class GameScreen(Screen):
         polished_case = self.magistrate_agent.get_response(self.llm, self.magistrate_agent.generate_prompt(polish_ctx, "整理正式案卷"), f"原始事实记录：\n{raw_log}", model=self.llm_model)
         
         draft_ctx = (
-            f"你正在撰写上呈给乾隆皇帝的正式奏折。请基于以下案卷内容进行深加工，不仅要陈述事实，更要体现出官员的政治立场。请以第一人称（臣）称呼自己。\n"
-            f"【强制格式要求】\n"
-            f"1. 第一行必须仅包含奏折类型：‘密折’ 或 ‘明发奏折’。\n"
-            f"2. 从第二行开始为奏折正文，必须符合清代奏折文体规范。\n"
-            f"3. 严禁尝试调用任何 API 指令（如 /read_memory 或 /torture）。"
+            "你正在撰写上呈给乾隆皇帝的正式奏折。请基于以下案卷内容进行深加工，不仅要陈述事实，更要体现出官员的政治立场。请以第一人称（臣）称呼自己。\n"
+            "【强制格式要求】\n"
+            "1. 第一行必须仅包含奏折类型：‘密折’ 或 ‘明发奏折’。\n"
+            "2. 从第二行开始为奏折正文，必须符合清代奏折文体规范。\n"
+            "3. 严禁尝试调用任何 API 指令（如 /read_memory 或 /torture）。"
         )
         full_draft_resp = self.magistrate_agent.get_response(self.llm, self.magistrate_agent.generate_prompt(draft_ctx, "撰写奏折"), f"案卷内容副本：\n{polished_case}", model=self.llm_model)
         
@@ -570,7 +711,8 @@ class GameScreen(Screen):
             self.query_one("#dev_monitor", Log).write_line(f"📖 正在阅览奏折 ID: {rid}")
 
     def _return_memorial(self, rid: int):
-        if self.current_report_id == rid: self.action_save_rescript()
+        if self.current_report_id == rid: 
+            self.action_save_rescript()
         report = self.letters_system.get_report(rid)
         if report and report.rescripts:
             report.is_returned = True
@@ -596,10 +738,39 @@ class SoulstealerTUI(App):
         super().__init__()
         self.cfg = cfg
         self.persistence = PersistenceManager()
+        self.retriever = None
+        self.llm = None
+        self.init_error = None
 
     def on_mount(self) -> None:
         self.title = "乾隆模拟器 - 《叫魂》MVP"
+        self._init_resources()
         self.push_screen(HomeScreen())
+
+    @work(exclusive=True, thread=True)
+    async def _init_resources(self):
+        """异步初始化重型资源（如 RAG 检索器）"""
+        import sys
+        cfg = self.cfg
+        if not cfg:
+            return
+            
+        try:
+            api_key = os.getenv("LLM_API_KEY") or cfg.llm.get("api_key", "")
+            base_url = cfg.llm.get("base_url", "https://openrouter.ai/api/v1")
+            self.llm = LLMClient(api_key=api_key, base_url=base_url)
+            
+            # Initialize RAG retriever (heavy operation)
+            # This might take some time on the first run as it loads models
+            print("DEBUG: Initializing SoulstealerRetriever...", file=sys.stderr)
+            self.retriever = SoulstealerRetriever(vector_store_dir="data/vectordb")
+            print("DEBUG: SoulstealerRetriever initialized successfully.", file=sys.stderr)
+            
+        except Exception as e:
+            self.init_error = str(e)
+            print(f"DEBUG ERROR during initialization: {e}", file=sys.stderr)
+            import traceback
+            traceback.print_exc()
 
 def run_tui(cfg: DictConfig = None):
     app = SoulstealerTUI(cfg)

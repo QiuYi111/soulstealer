@@ -19,6 +19,9 @@ class Agent:
         # L3: Relationships/External Context - Loaded from relationships.json
         self.relationships = {}
         
+        # Granular Traits: Loaded from trait.json
+        self.traits = {}
+        
         self._load_data()
 
     def _load_data(self):
@@ -31,7 +34,7 @@ class Agent:
             # Extract name from first line if it's a markdown header
             first_line = self.soul_content.split('\n')[0]
             if first_line.startswith("# "):
-                self.name = first_line.replace("# ", "").split('：')[-1].split(' (')[0].strip()
+                self.name = str(first_line.replace("# ", "").split('：')[-1].split(' (')[0].strip())
         
         # L2: Memory
         memory_path = os.path.join(self.agent_dir, "memory.json")
@@ -45,12 +48,25 @@ class Agent:
             with open(rel_path, "r", encoding="utf-8") as f:
                 self.relationships = json.load(f)
 
+        # Granular Traits
+        trait_path = os.path.join(self.agent_dir, "trait.json")
+        if os.path.exists(trait_path):
+            with open(trait_path, "r", encoding="utf-8") as f:
+                self.traits = json.load(f)
+
     def save_memory(self):
         """Persists L2 memory to memory.json."""
         memory_path = os.path.join(self.agent_dir, "memory.json")
         os.makedirs(self.agent_dir, exist_ok=True)
         with open(memory_path, "w", encoding="utf-8") as f:
             json.dump(self.memory, f, ensure_ascii=False, indent=2)
+
+    def save_traits(self):
+        """Persists granular traits to trait.json."""
+        trait_path = os.path.join(self.agent_dir, "trait.json")
+        os.makedirs(self.agent_dir, exist_ok=True)
+        with open(trait_path, "w", encoding="utf-8") as f:
+            json.dump(self.traits, f, ensure_ascii=False, indent=2)
 
     def add_memory(self, content: str):
         """Adds a new autonomous memory entry."""
@@ -86,15 +102,15 @@ class Agent:
         # Identity Section (The Soul)
         identity_prompt = (
             f"【核心身份 (Identity)】\n"
-            f"你即是：{self.name}。\n"
-            f"以下是你的个人传记与灵魂深度定义，它决定了你的世界观、语言风格和潜在动机：\n"
+            f"你即是：{str(self.name)}。\n"
+            "以下是你的个人传记与灵魂深度定义 (Soul.md)，它决定了你的世界观、语言风格和潜在动机：\n"
             f"{self.soul_content}\n"
         )
 
         # Scene Section (The Vessel/Environment)
         returned_context = f"\n【奉旨批回奏折 (Returned Memorials with Rescripts)】\n{returned_memorials}\n" if returned_memorials else ""
         scene_prompt = (
-            f"【当前环境 (Scene Context)】\n{scene_context}\n"
+            f"【当前环境 (Scene Context)】\n{str(scene_context)}\n"
             f"{returned_context}\n"
             f"【行为准则 (Instructions)】\n{scene_instructions}\n"
         )
@@ -113,7 +129,8 @@ class Agent:
         
         resource_prompt = (
             "【可用资源库】\n"
-            f"你的近期部分记忆 (L2 Memory - Recent):\n{memory_str}\n\n"
+            f"你的近期部分记忆 (L2 Memory - Recent / memory.json):\n{memory_str}\n\n"
+            f"你的极细粒度特征 (L1 Traits - trait.json):\n{json.dumps(self.traits, ensure_ascii=False, indent=2)}\n\n"
             "- L3 (Relationships): 你的社会关系网 (relationships.json)\n"
         )
 
