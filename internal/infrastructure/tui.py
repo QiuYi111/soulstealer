@@ -4,16 +4,16 @@ from textual.binding import Binding
 from textual.containers import Horizontal, Vertical, Center
 from textual.screen import Screen
 from textual import work, on
-from textual.worker import get_current_worker
 from omegaconf import DictConfig
-from internal.domain.court import CourtSession
 from internal.domain.agent import Agent
 from internal.domain.letters import LettersSystem, Rescript
 from internal.domain.cases import CasesSystem
 from internal.infrastructure.llm import LLMClient
 from internal.infrastructure.persistence import PersistenceManager
-from internal.domain.agent_builder import AgentBuilder
 from internal.rag.retriever import SoulstealerRetriever
+from internal.application.setup_service import SetupService
+from internal.application.game_session_service import GameSessionService
+from internal.application.archive_service import ArchiveService
 import os
 import re
 import asyncio
@@ -309,17 +309,14 @@ class SetupScreen(Screen):
         status = self.query_one("#gen_status")
         status.update("⏳ 正在调取大清档案 (RAG 检索中)...")
         
-        cfg = self.app.cfg
-        model = cfg.llm.get("model", "deepseek/deepseek-chat")
-        
         try:
             # Wait for shared resources if they are still loading
-            if self.app.retriever is None or self.app.llm is None:
+            if not hasattr(self.app, "setup_service") or self.app.setup_service is None:
                 for i in range(180): # Wait up to 180 seconds for heavy model loading
                     if i % 5 == 0:
                         status.update(f"⏳ 档案库正在初始化 (已耗时 {i}s)...")
                     
-                    if self.app.retriever is not None and self.app.llm is not None:
+                    if hasattr(self.app, "setup_service") and self.app.setup_service is not None:
                         break
                     if hasattr(self.app, "init_error") and self.app.init_error:
                         status.update(f"❌ 初始化失败: {self.app.init_error}")
@@ -327,34 +324,34 @@ class SetupScreen(Screen):
                         return
                     await asyncio.sleep(1)
                 
-            if self.app.retriever is None or self.app.llm is None:
+            if not hasattr(self.app, "setup_service") or self.app.setup_service is None:
                 status.update("❌ 档案库初始化超时，请检查网络或配置")
                 progress.styles.display = "none"
                 return
 
-            status.update("⏳ 正在调取大清档案 (RAG 检索中)...")
-            # Use shared resources from App
-            builder = AgentBuilder(self.app.retriever, self.app.llm, model=model)
+            status.update("⏳ 正在批量塑造历史角色灵魂...")
             
-            # Paths for temporary generation
             mag_dir = "saves/temp_agents/magistrate"
             sus_dir = "saves/temp_agents/suspect"
             
-            status.update("⏳ 正在塑造知县灵魂...")
-            if not builder.build_agent(mag_dir, "县令", mag_req):
-                status.update("❌ 知县生成失败")
+            requests = [
+                {"save_dir": mag_dir, "name": "县令", "desc": mag_req},
+                {"save_dir": sus_dir, "name": "阿二", "desc": sus_req}
+            ]
+            
+            def progress_cb(completed, total, msg):
+                self.app.call_from_thread(status.update, f"⏳ {msg} ({completed}/{total})")
+
+            results = await self.app.setup_service.batch_generate_agents(requests, progress_callback=progress_cb)
+            
+            if all(results):
+                status.update("✨ 角感已成，即将启程...")
+                await asyncio.sleep(1.5)
+                self.app.call_from_thread(self.app.push_screen, GameScreen(is_new_game=True, mag_path=mag_dir, sus_path=sus_dir))
+            else:
+                status.update("❌ 角色生成部分或全部失败")
                 progress.styles.display = "none"
-                return
-                
-            status.update("⏳ 正在塑造嫌犯因果...")
-            if not builder.build_agent(sus_dir, "阿二", sus_req):
-                status.update("❌ 嫌犯生成失败")
-                progress.styles.display = "none"
-                return
-                
-            status.update("✨ 角感已成，即将启程...")
-            await asyncio.sleep(1.5)
-            self.app.call_from_thread(self.app.push_screen, GameScreen(is_new_game=True, mag_path=mag_dir, sus_path=sus_dir))
+
         except Exception as e:
             status.update(f"❌ 发生错误: {str(e)}")
             progress.styles.display = "none"
@@ -440,7 +437,7 @@ class GameScreen(Screen):
         self.suspect_agent = None
         self.letters_system = LettersSystem()
         self.cases_system = CasesSystem()
-        self.current_session = None
+        self.game_session = None
         self.llm = None
         self.llm_model = None
 
@@ -484,30 +481,30 @@ class GameScreen(Screen):
             self.letters_system.reports = []
             # We could also reset agent memories if desired
             
+        self.game_session = GameSessionService(
+            llm=self.llm,
+            llm_model=self.llm_model,
+            letters_system=self.letters_system,
+            cases_system=self.cases_system,
+            magistrate=self.magistrate_agent,
+            suspect=self.suspect_agent
+        )
+            
         self._update_status()
         self._update_letters_list()
 
     def _load_from_persistence(self, slot_id):
-        data = self.app.persistence.load_game(slot_id)
-        if data:
-            self.ap = data["ap"]
-            self.letters_system.reports = [] # Clear current
-            # Proper way to load reports needs LettersSystem to handle data dicts
-            for r_data in data["letters"]:
-                report = self.letters_system.add_report(r_data["type"], r_data["content"], r_data["author"])
-                report.id = r_data["id"]
-                report.timestamp = r_data["timestamp"]
-                report.is_returned = r_data.get("is_returned", False)
-                report.rescripts = r_data.get("rescripts", [])
-                report.raw_case_data = r_data.get("raw_case_data")
-                report.polished_case_data = r_data.get("polished_case_data")
-            
-            # Load agent memories
-            if "magistrate" in data["agents_memories"]:
-                self.magistrate_agent.memory = data["agents_memories"]["magistrate"]
-            if "aer" in data["agents_memories"]:
-                self.suspect_agent.memory = data["agents_memories"]["aer"]
-                
+        success = self.app.archive_service.load_game(
+            slot_id, 
+            self.letters_system, 
+            self.magistrate_agent, 
+            self.suspect_agent
+        )
+        if success:
+            # Retrieve AP directly from persistence payload
+            data = self.app.persistence.load_game(slot_id)
+            if data:
+                self.ap = data.get("ap", 5)
             self.query_one("#dev_monitor", Log).write_line(f"✅ 已加载存档 {slot_id}")
 
     def _update_status(self):
@@ -552,45 +549,15 @@ class GameScreen(Screen):
         else:
             self.query_one("#dev_monitor", Log).write_line(f"⚠️ 旨意不明: {cmd}")
 
-    async def _generate_save_name(self) -> str:
-        """调用 LLM 生成具有文学色彩的存档名"""
-        prompt = (
-            "你是一个清代史官。请根据目前的政务进度，起一个4到8个字的、具有清代文书风格或文学色彩的存档名称。\n"
-            f"当前政务：行动点剩{self.ap}，已有奏折{len(self.letters_system.reports)}份。\n"
-            "名称示例：‘德清妖道初露端倪’、‘内阁秘议叫魂案’、‘江浙奏折纷至沓来’。\n"
-            "仅输出名称，不要有任何修饰词或标点。"
-        )
-        try:
-            name = await self.llm.get_response_async(
-                "你是一个擅长起名的历史模拟助手。",
-                prompt,
-                model=self.llm_model
-            )
-            return name.strip().strip("'").strip("‘").strip("’").strip('"')
-        except Exception:
-            return "圣踪微巡"
-
     @work(exclusive=True, thread=True)
     async def action_quick_save(self) -> None:
-        # Save to a timestamped slot
-        slot_id = datetime.now().strftime("%Y%m%d_%H%M%S")
-        save_name = await self._generate_save_name()
-        metadata = {"desc": save_name}
-        
-        # Prepare letters data
-        letters_data = []
-        for r in self.letters_system.reports:
-            letters_data.append({
-                "id": r.id, "type": r.type, "content": r.content, "author": r.author,
-                "timestamp": r.timestamp, "is_returned": getattr(r, 'is_returned', False),
-                "rescripts": [vars(res) if not isinstance(res, dict) else res for res in r.rescripts],
-                "raw_case_data": getattr(r, 'raw_case_data', None),
-                "polished_case_data": getattr(r, 'polished_case_data', None)
-            })
+        if not hasattr(self.app, 'archive_service'):
+            return
             
-        success = self.app.persistence.save_game(
-            slot_id, metadata, letters_data, "data/cases", 
-            [self.magistrate_agent, self.suspect_agent], self.ap
+        success, slot_id = await self.app.archive_service.quick_save(
+            self.ap,
+            self.letters_system,
+            [self.magistrate_agent, self.suspect_agent]
         )
         if success:
             self.query_one("#dev_monitor", Log).write_line(f"💾 游戏已保存至 slot_{slot_id}")
@@ -625,80 +592,38 @@ class GameScreen(Screen):
             self.query_one("#dev_monitor", Log).write_line(f"✅ 奏折 ID: {self.current_report_id} 已保存。")
 
     @work(exclusive=True, thread=True)
-    def _start_simulation(self):
+    async def _start_simulation(self):
         dev = self.query_one("#dev_monitor", Log)
         dev.write_line("⏳ 旨意已下达，德清县令正在紧急审理中...")
-        prisoner_list = [self.suspect_agent.name]
-        self.current_session = CourtSession(self.magistrate_agent.name, self.suspect_agent.name, prisoner_list=prisoner_list)
         
-        returned_memorials = ""
-        relevant_reports = [r for r in self.letters_system.reports if r.rescripts][-3:]
-        for r in relevant_reports:
-            res_contents = [res.content if hasattr(res, 'content') else res['content'] for res in r.rescripts]
-            res_str = "; ".join(res_contents)
-            returned_memorials += f"《{r.type} ID:{r.id}》\n内容：{r.content}\n皇帝朱批：{res_str}\n"
-
-        for i in range(10):
-            worker = get_current_worker()
-            if worker.is_cancelled:
-                return
-            success = self.current_session.run_auto_step(self.magistrate_agent, self.suspect_agent, self.llm, self.llm_model, returned_memorials=returned_memorials)
-            if len(self.current_session.log) >= 2:
-                last_entry = self.current_session.log[-1]
-                if last_entry['role'] == 'system':
-                    dev.write_line(f"知县：{last_entry['content']}")
-                else:
-                    dev.write_line(f"知县：{self.current_session.log[-2]['content']}")
-                    dev.write_line(f"嫌犯：{last_entry['content']}")
-            if not success:
-                break
-        
-        raw_log = self.current_session.get_raw_log()
-
-        # Step: Let the agent autonomously update memory with a summary of this session
-        summary_ctx = "审讯已结束。作为知县，请总结本次审讯的关键点、嫌犯的矛盾之处或你的新发现，以便日后查阅。请使用 [[/update_memory 内容]] 指令记录。"
-        summary_resp_raw = self.magistrate_agent.get_response(self.llm, self.magistrate_agent.generate_prompt(summary_ctx, "记录审讯摘要", available_tools=["/read_memory"]), f"审讯实录：\n{raw_log}", model=self.llm_model)
-        
-        # Use the parser from current_session (or a temporary one)
-        _, summary_cmds = self.current_session._parse_commands(summary_resp_raw)
-        for full, cmd, args in summary_cmds:
-            if cmd == "/update_memory" and args:
-                self.magistrate_agent.add_memory(args)
-                self.magistrate_agent.save_memory()
-                dev.write_line("📓 知县已将审讯摘要存入记忆。")
-                break # Only take the first summary for the log
-
-        loc = self.current_session.location_info
-        polish_ctx = f"你正处于{loc['province']}{loc['prefecture']}{loc['county']}县衙。审讯已结束。请将原始审讯记录整理成一份言辞严谨、逻辑清晰的正式案卷。"
-        polished_case = self.magistrate_agent.get_response(self.llm, self.magistrate_agent.generate_prompt(polish_ctx, "整理正式案卷"), f"原始事实记录：\n{raw_log}", model=self.llm_model)
-        
-        draft_ctx = (
-            "你正在撰写上呈给乾隆皇帝的正式奏折。请基于以下案卷内容进行深加工，不仅要陈述事实，更要体现出官员的政治立场。请以第一人称（臣）称呼自己。\n"
-            "【强制格式要求】\n"
-            "1. 第一行必须仅包含奏折类型：‘密折’ 或 ‘明发奏折’。\n"
-            "2. 从第二行开始为奏折正文，必须符合清代奏折文体规范。\n"
-            "3. 严禁尝试调用任何 API 指令（如 /read_memory 或 /torture）。"
-        )
-        full_draft_resp = self.magistrate_agent.get_response(self.llm, self.magistrate_agent.generate_prompt(draft_ctx, "撰写奏折"), f"案卷内容副本：\n{polished_case}", model=self.llm_model)
-        
-        if "\n" in full_draft_resp:
-            r_type, r_content = full_draft_resp.split("\n", 1)
-            report_type = "明发奏折" if "明" in r_type else "密折"
-            report_content = r_content.strip()
-        else:
-            report_type, report_content = "密折", full_draft_resp
-
-        report = self.letters_system.add_report(report_type, report_content, self.magistrate_agent.name)
-        # 本地持久化 (即使不手动存档也保留最新记录)
-        self.letters_system.save_to_file("data/letters.json")
-        self.cases_system.save_case(report.id, raw_log, polished_case)
-
-        report.raw_case_data = raw_log
-        report.polished_case_data = polished_case
-        
-        dev.write_line(f"✨ 收到来自 {self.magistrate_agent.name} 的一份新奏折 (ID: {report.id})")
-        self.app.call_from_thread(self._view_report, report.id)
-        self.app.call_from_thread(self._update_letters_list)
+        if not self.game_session:
+            dev.write_line("❌ 尚未建立政务环境 (GameSession)")
+            return
+            
+        try:
+            async for event in self.game_session.run_simulation_sequence():
+                if getattr(self, "_worker_cancelled", False):
+                    # In textual you can check worker status but catching cancellations in generators handles it gracefully
+                    break
+                    
+                if event["type"] == "log":
+                    speaker = event.get("speaker", "system")
+                    if speaker == "magistrate":
+                        self.app.call_from_thread(dev.write_line, f"知县：{event['content']}")
+                    elif speaker == "suspect":
+                        self.app.call_from_thread(dev.write_line, f"嫌犯：{event['content']}")
+                    else:
+                        self.app.call_from_thread(dev.write_line, event["content"])
+                elif event["type"] == "report":
+                    self.app.call_from_thread(dev.write_line, f"✨ 收到来自 {event['author']} 的一份新奏折 (ID: {event['report_id']})")
+                    self.app.call_from_thread(self._view_report, event["report_id"])
+                    self.app.call_from_thread(self._update_letters_list)
+        except asyncio.CancelledError:
+            dev.write_line("⚠️ 审理被叫停。")
+        except Exception as e:
+            self.app.call_from_thread(dev.write_line, f"❌ 审理中断: {str(e)}")
+            import traceback
+            traceback.print_exc()
 
     def _view_report(self, rid: int):
         report = self.letters_system.get_report(rid)
@@ -764,7 +689,10 @@ class SoulstealerTUI(App):
             # This might take some time on the first run as it loads models
             print("DEBUG: Initializing SoulstealerRetriever...", file=sys.stderr)
             self.retriever = SoulstealerRetriever(vector_store_dir="data/vectordb")
-            print("DEBUG: SoulstealerRetriever initialized successfully.", file=sys.stderr)
+            # Setup the application level services
+            model = cfg.llm.get("model", "deepseek/deepseek-chat")
+            self.setup_service = SetupService(self.retriever, self.llm)
+            self.archive_service = ArchiveService(self.persistence, self.llm, model)
             
         except Exception as e:
             self.init_error = str(e)
